@@ -48,16 +48,6 @@ QComboBox QAbstractItemView {
              <height>25</height>
             </size>
            </property>
-           <item>
-            <property name="text">
-             <string>a</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>v</string>
-            </property>
-           </item>
           </widget>
          </item>
         </layout>
@@ -152,7 +142,7 @@ QComboBox QAbstractItemView {
   <customwidget>
    <class>QCustomPlot</class>
    <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
+   <header>components/qcustomplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

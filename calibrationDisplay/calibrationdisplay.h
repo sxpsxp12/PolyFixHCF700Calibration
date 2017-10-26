@@ -6,7 +6,7 @@
 #include <QSerialPortInfo>
 #include "nodeparam.h"
 #include "sensorglobal.h"
-#include "calibrationDisplay/qcustomplot.h"
+#include "components/qcustomplot.h"
 #include <QMouseEvent>
 
 namespace Ui {
@@ -18,7 +18,7 @@ class CalibrationDisplay : public QDialog
     Q_OBJECT
 
 public:
-    explicit CalibrationDisplay(QMap<QSerialPort *,nodeParamList> *mapSerialPtrAndNodeList,QWidget *parent = 0);
+    explicit CalibrationDisplay(QMap<QSerialPort *,nodeShareedPtrParamList> *mapSerialPtrAndNodeList,QWidget *parent = 0);
     ~CalibrationDisplay();
 private slots:
     void on_pbt_querycalibration_clicked();
@@ -31,7 +31,7 @@ private slots:
 
 private:
     Ui::CalibrationDisplay *ui;
-    QMap<QSerialPort *,nodeParamList> *m_mapSerialPtrAndNodeList;
+    QMap<QSerialPort *,nodeShareedPtrParamList> *m_mapSerialPtrAndNodeList;
     QMap<QString,QList<QString>> m_mapPortStrAndAddrList;
     QCPItemText *m_textTip;
     QCPItemTracer *m_tracer;//用于强调鼠标点击时间点击到的采样点

@@ -1,4 +1,5 @@
 ﻿#include "nodeparam.h"
+#include <QDebug>
 
 NodeParam::NodeParam()
 {
@@ -12,6 +13,12 @@ NodeParam::NodeParam(QSerialPortInfo port)
     m_port = port;
     m_status = Status_None;
     m_node_receiveData.clear();
+    m_softversion = 0;
+    m_is_selected = false;
+    m_serialNumber.clear();
+
+    m_minDataTime = 0;
+    m_maxDataTime = 0;
 }
 
 NodeParam::NodeParam(const NodeParam &other)
@@ -23,15 +30,20 @@ NodeParam::NodeParam(const NodeParam &other)
     m_status = other.m_status;
     m_node_calibrationTemp = other.m_node_calibrationTemp;
     m_node_receiveData = other.m_node_receiveData;
+    m_is_selected = other.m_is_selected;
+    m_minDataTime = other.m_minDataTime;
+    m_maxDataTime = other.m_maxDataTime;
+    m_serialNumber = other.m_serialNumber;
 
     m_upData = other.m_upData;
     m_downData = other.m_downData;
+    m_node_datas = other.m_node_datas;
     m_mapPayloadAndpolyFactor = other.m_mapPayloadAndpolyFactor;
 }
 
 bool NodeParam::operator ==(const NodeParam &other) const
 {
-    if(m_port.portName() == other.m_port.portName() && m_node_addr == other.m_node_addr && m_node_range == other.m_node_range)
+    if(m_serialNumber == other.m_serialNumber)
         return true;
     return false;
 }
@@ -66,6 +78,11 @@ QMap<nodePayload, QList<node_Data> > NodeParam::getDowndata() const
     return m_downData;
 }
 
+QMap<nodePayload, QList<node_Data> > NodeParam::getNodedatas() const
+{
+    return m_node_datas;
+}
+
 QMap<nodePayload, std::vector<double> > NodeParam::getPolyFactorMap()
 {
     return m_mapPayloadAndpolyFactor;
@@ -86,20 +103,19 @@ QString NodeParam::getPolyFactorStr(nodePayload payload) const
     {
         if (0 == i)
         {
-            strTemp = QString::number(factor.at(i),'f',6);
+            strTemp = QString("%1").arg(factor.at(i));
         }
         else
         {
 
             double fac = factor.at(i);
             if(fac < 0)
-                strTemp = QString("%1x^%2").arg(fac,0,'f',6).arg(i);
+                strTemp = QString("%1x^%2").arg(fac).arg(i);
             else
-                strTemp = QString("+%1x^%2").arg(fac,0,'f',6).arg(i);
+                strTemp = QString("+%1x^%2").arg(fac).arg(i);
         }
         strFun += strTemp;
     }
-
     return strFun;
 }
 
@@ -163,6 +179,11 @@ void NodeParam::appendDownData(nodePayload payload, node_Data data)
     m_downData[payload].append(data);
 }
 
+void NodeParam::appendnodeData(nodePayload payload, node_Data data)
+{
+    m_node_datas[payload].append(data);
+}
+
 void NodeParam::clearUpData()
 {
     m_upData.clear();
@@ -171,6 +192,84 @@ void NodeParam::clearUpData()
 void NodeParam::clearDownData()
 {
     m_downData.clear();
+}
+
+void NodeParam::clearNodeDatas()
+{
+    m_node_datas.clear();
+}
+
+void NodeParam::clearPolyFactor()
+{
+    m_mapPayloadAndpolyFactor.clear();
+}
+
+void NodeParam::removeUpPayloadLastData(nodePayload payload)
+{
+    if(!m_upData[payload].isEmpty())
+        m_upData[payload].removeLast();
+}
+
+void NodeParam::removeDownPayloadLastData(nodePayload payload)
+{
+    if(!m_downData[payload].isEmpty())
+        m_downData[payload].removeLast();
+}
+
+void NodeParam::removeNodePayloadLastData(nodePayload payload)
+{
+    if(!m_node_datas[payload].isEmpty())
+        m_node_datas[payload].removeLast();
+}
+
+void NodeParam::setNodeSoftVersion(quint16 version)
+{
+    m_softversion = version;
+}
+
+quint16 NodeParam::getNodeSoftVersion() const
+{
+    return m_softversion;
+}
+
+void NodeParam::setNodeSelectedStatus(bool is_selected)
+{
+    m_is_selected = is_selected;
+}
+
+bool NodeParam::getNodeSelectedStatus() const
+{
+    return m_is_selected;
+}
+
+void NodeParam::setNodeDataMinTime(uint time)
+{
+    m_minDataTime = time;
+}
+
+uint NodeParam::getNodeDataMinTime() const
+{
+    return m_minDataTime;
+}
+
+void NodeParam::setNodeDataMaxTime(uint time)
+{
+    m_maxDataTime = time;
+}
+
+uint NodeParam::getNodeDataMaxTime() const
+{
+    return m_maxDataTime;
+}
+
+void NodeParam::setSerialNumber(QString sn)
+{
+    m_serialNumber = sn;
+}
+
+QString NodeParam::getSerialNumber() const
+{
+    return m_serialNumber;
 }
 
 NodeParam &NodeParam::operator=(const NodeParam &other)
@@ -184,10 +283,15 @@ NodeParam &NodeParam::operator=(const NodeParam &other)
     m_status = other.m_status;
     m_node_calibrationTemp = other.m_node_calibrationTemp;
     m_node_receiveData = other.m_node_receiveData;
+    m_minDataTime = other.m_minDataTime;
+    m_maxDataTime = other.m_maxDataTime;
+    m_serialNumber = other.m_serialNumber;
 
     m_upData = other.m_upData;
     m_downData = other.m_downData;
+    m_node_datas = other.m_node_datas;
     m_mapPayloadAndpolyFactor = other.m_mapPayloadAndpolyFactor;
+    m_is_selected = other.m_is_selected;
 
     return *this;
 }

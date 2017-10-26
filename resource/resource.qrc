@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/sound">
+        <file>sound.wav</file>
+    </qresource>
+    <qresource prefix="/image">
+        <file>menu_black.png</file>
+        <file>loading_line.gif</file>
+        <file>delete_pbt.png</file>
+        <file>delete_pbt_hover.png</file>
+    </qresource>
+</RCC>

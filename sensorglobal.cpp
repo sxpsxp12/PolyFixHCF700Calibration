@@ -66,12 +66,41 @@ void sendRequestRange(int addr,QSerialPort *serial)
     p += 2;
     *((quint16*)p) = crc16((quint8*)buf, 0, p-buf);
     p += 2;
-//            for(int i = 0;i < 8;++i)
-//            {
-//                qDebug()<< QString("%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
-//            }
+
+//    for(int i = 0;i < p-buf;++i)
+//    {
+//        qDebug()<< QString("%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
+//    }
     serial->write(buf, p-buf);
 }
+/**
+ * @brief sendRequestSN
+ * @param addr
+ * @param serial
+ */
+void sendRequestSN(int addr,QSerialPort *serial)
+{
+    char buf[128];
+    memset(buf,0,128);
+    char *p=buf;
+
+    *p++ = (char)addr;
+    *p++ = FunCode_ReadSN;
+    *p++ = 0x44;
+    *p++ = 0x66;
+    *p++ = 0x88;
+    *p++ = 0xaa;
+    *((quint16*)p) = crc16((quint8*)buf, 0, p-buf);
+    p += 2;
+
+//    for(int i = 0;i < p-buf;++i)
+//    {
+//        qDebug()<< QString("%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
+//    }
+    serial->write(buf, p-buf);
+}
+
+
 /**
  *  节点采样
  * @brief sendNodeSample
@@ -100,6 +129,58 @@ void sendNodeSample(int addr,QSerialPort *serial)
     qDebug() << "sendNodeSample write length:" << length;
 }
 
+void sendRequestNodeTemp(int addr,QSerialPort *serial)
+{
+    char buf[128];
+    memset(buf,0,128);
+    char *p=buf;
+
+    *p++ = (char)addr;
+    *p++ = FuncCode_ReadInputRegister;
+    *((quint16*)p) = htons(0x0008);
+    p += 2;
+    *((quint16*)p) = htons(2);
+    p += 2;
+    *((quint16*)p) = crc16((quint8*)buf, 0, p-buf);
+    p += 2;
+
+//    for(int i = 0;i < p-buf;++i)
+//    {
+//        qDebug()<< QString("sendRequestNodeData:%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
+//    }
+
+    int length = serial->write(buf, p-buf);
+    qDebug() << "sendRequestNodeTemp write length:" << length;
+}
+
+/**
+ *  清空多项式系数指令
+ * @brief sendClearFactor
+ * @param addr
+ * @param serial
+ */
+void sendClearFactor(int addr,QSerialPort *serial)
+{
+    char buf[128];
+    memset(buf,0,128);
+    char *p=buf;
+
+    *p++ = (char)addr;
+    *p++ = FunCode_ClearFactor;
+    *p++ = 0x44;
+    *p++ = 0x66;
+    *p++ = 0x88;
+    *p++ = 0xaa;
+    *((quint16*)p) = crc16((quint8*)buf, 0, p-buf);
+    p += 2;
+//    for(int i = 0;i < p-buf;++i)
+//    {
+//        qDebug()<< QString("sendNodeSample:%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
+//    }
+
+    int length = serial->write(buf, p-buf);
+    qDebug() << "sendClearFactor write length:" << length;
+}
 /**
  *  发送请求数据指令，可以获取温度值和压强值
  * @brief sendRequestNodeData
@@ -128,6 +209,36 @@ void sendRequestNodeData(int addr,QSerialPort *serial)
 
     int length = serial->write(buf, p-buf);
     qDebug() << "sendRequestNodeData write length:" << length;
+}
+
+/**
+ *  请求节点设备软件版本
+ * @brief sendRequestNodeSoftVertion
+ * @param addr
+ * @param serial
+ */
+void sendRequestNodeSoftVertion(int addr,QSerialPort *serial)
+{
+    char buf[128];
+    memset(buf,0,128);
+    char *p=buf;
+
+    *p++ = (char)addr;
+    *p++ = FuncCode_ReadInputRegister;
+    *((quint16*)p) = htons(0x01);
+    p += 2;
+    *((quint16*)p) = htons(1);
+    p += 2;
+    *((quint16*)p) = crc16((quint8*)buf, 0, p-buf);
+    p += 2;
+
+//    for(int i = 0;i < p-buf;++i)
+//    {
+//        qDebug()<< QString("sendRequestNodeSoftVertion:%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
+//    }
+
+    int length = serial->write(buf, p-buf);
+    qDebug() << "sendRequestNodeSoftVertion write length:" << length;
 }
 
 void sendSetPayloadFactor(int addr,QSerialPort *serial,nodePayload payload,int index,float value)
@@ -232,4 +343,105 @@ void sendSetPayloadFactor(int addr,QSerialPort *serial,nodePayload payload,int i
     int length = serial->write(buf, p-buf);
     qDebug() << "sendSetPayloadFactor write length:" << length;
 }
+
+void sendReadPayloadFactor(int addr,QSerialPort *serial,nodePayload payload,int index)
+{
+    char buf[128];
+    memset(buf,0,128);
+    char *p=buf;
+
+    *p++ = (char)addr;
+    *p++ = FuncCode_ReadHoldingRegister;
+
+    switch (payload) {
+    case FULL_PAYLOAD:
+        if(index == 0)
+            *((quint16*)p) = htons(0x4C);
+        else if(index == 1)
+            *((quint16*)p) = htons(0x4E);
+        else if(index == 2)
+            *((quint16*)p) = htons(0x50);
+        else if(index == 3)
+            *((quint16*)p) = htons(0x52);
+        else if(index == 4)
+            *((quint16*)p) = htons(0x54);
+        break;
+    case FOUR_FIFTH_PAYLOAD:
+        if(index == 0)
+            *((quint16*)p) = htons(0x42);
+        else if(index == 1)
+            *((quint16*)p) = htons(0x44);
+        else if(index == 2)
+            *((quint16*)p) = htons(0x46);
+        else if(index == 3)
+            *((quint16*)p) = htons(0x48);
+        else if(index == 4)
+            *((quint16*)p) = htons(0x4A);
+        break;
+    case THREE_FIFTH_PAYLOAD:
+        if(index == 0)
+            *((quint16*)p) = htons(0x38);
+        else if(index == 1)
+            *((quint16*)p) = htons(0x3A);
+        else if(index == 2)
+            *((quint16*)p) = htons(0x3C);
+        else if(index == 3)
+            *((quint16*)p) = htons(0x3E);
+        else if(index == 4)
+            *((quint16*)p) = htons(0x40);
+        break;
+    case TWO_FIFTH_PAYLOAD:
+        if(index == 0)
+            *((quint16*)p) = htons(0x2E);
+        else if(index == 1)
+            *((quint16*)p) = htons(0x30);
+        else if(index == 2)
+            *((quint16*)p) = htons(0x32);
+        else if(index == 3)
+            *((quint16*)p) = htons(0x34);
+        else if(index == 4)
+            *((quint16*)p) = htons(0x36);
+        break;
+    case ONE_FIFTH_PAYLOAD:
+        if(index == 0)
+            *((quint16*)p) = htons(0x24);
+        else if(index == 1)
+            *((quint16*)p) = htons(0x26);
+        else if(index == 2)
+            *((quint16*)p) = htons(0x28);
+        else if(index == 3)
+            *((quint16*)p) = htons(0x2A);
+        else if(index == 4)
+            *((quint16*)p) = htons(0x2C);
+        break;
+    case EMPTY_PAYLOAD:
+        if(index == 0)
+            *((quint16*)p) = htons(0x1A);
+        else if(index == 1)
+            *((quint16*)p) = htons(0x1C);
+        else if(index == 2)
+            *((quint16*)p) = htons(0x1E);
+        else if(index == 3)
+            *((quint16*)p) = htons(0x20);
+        else if(index == 4)
+            *((quint16*)p) = htons(0x22);
+        break;
+    default:
+        break;
+    }
+    p += 2;
+    *((quint16*)p) = htons(0x02);
+    p += 2;
+    *((quint16*)p) = crc16((quint8*)buf, 0, p-buf);
+    p += 2;
+
+//    for(int i = 0;i < p-buf;++i)
+//    {
+//        qDebug()<< QString("sendSetPayloadFactor:%1").arg((int)(buf[i]&0xff),2,16,QLatin1Char('0')).toUpper();
+//    }
+
+    int length = serial->write(buf, p-buf);
+    qDebug() << "sendReadPayloadFactor write length:" << length;
+}
+
 

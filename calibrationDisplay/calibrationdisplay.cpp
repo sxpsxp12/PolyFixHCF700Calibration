@@ -2,7 +2,7 @@
 #include "ui_calibrationdisplay.h"
 #include <algorithm>
 
-CalibrationDisplay::CalibrationDisplay(QMap<QSerialPort *, nodeParamList> *mapSerialPtrAndNodeList, QWidget *parent) :
+CalibrationDisplay::CalibrationDisplay(QMap<QSerialPort *, nodeShareedPtrParamList> *mapSerialPtrAndNodeList, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CalibrationDisplay)
 {
@@ -25,12 +25,12 @@ void CalibrationDisplay::_initCustomPlot()
     m_mapPortStrAndAddrList.clear();
     ui->cbx_ports->clear();
     ui->cbx_addrs->clear();
-    QMap<QSerialPort *,QList<NodeParam>>::iterator iter = m_mapSerialPtrAndNodeList->begin();
+    QMap<QSerialPort *,nodeShareedPtrParamList>::iterator iter = m_mapSerialPtrAndNodeList->begin();
     while(iter != m_mapSerialPtrAndNodeList->end())
     {
         for(int i = 0;i < iter.value().count();++i)
         {
-            m_mapPortStrAndAddrList[iter.value()[i].getNodePort().portName()].append(QString::number(iter.value()[i].getNodeAddr()));
+            m_mapPortStrAndAddrList[iter.value()[i]->getNodePort().portName()].append(QString::number(iter.value()[i]->getNodeAddr()));
         }
         ++iter;
     }
@@ -150,17 +150,17 @@ void CalibrationDisplay::on_pbt_querycalibration_clicked()
 {
     QString port = ui->cbx_ports->currentText();
     int addr = ui->cbx_addrs->currentText().toInt();
-    NodeParam node_param;
+    QSharedPointer<NodeParam> node_param;
 
     qobject_cast<QCPPlotTitle *>(ui->customplot->plotLayout()->element(0,0))->setText(QString("串口%1的节点%2标定数据图").arg(port).arg(addr));
-    QMap<QSerialPort *,QList<NodeParam>>::iterator iter = m_mapSerialPtrAndNodeList->begin();
+    QMap<QSerialPort *,nodeShareedPtrParamList>::iterator iter = m_mapSerialPtrAndNodeList->begin();
     while(iter != m_mapSerialPtrAndNodeList->end())
     {
-        if(iter.value().first().getNodePort().portName() == port)
+        if(iter.value().first()->getNodePort().portName() == port)
         {
             for(int i = 0;i < iter.value().count();++i)
             {
-                if(iter.value()[i].getNodeAddr() == addr)
+                if(iter.value()[i]->getNodeAddr() == addr)
                 {
                     node_param = iter.value()[i];
                     break;
@@ -171,15 +171,15 @@ void CalibrationDisplay::on_pbt_querycalibration_clicked()
         ++iter;
     }
 
-    if(node_param.getNodeAddr() != addr || node_param.getNodePort().portName() != port)
+    if(node_param->getNodeAddr() != addr || node_param->getNodePort().portName() != port)
         return;
 
-    QMap<nodePayload,std::vector<double>> poly_factor_map = node_param.getPolyFactorMap();
+    QMap<nodePayload,std::vector<double>> poly_factor_map = node_param->getPolyFactorMap();
     QMap<nodePayload,std::vector<double>>::iterator payloadIter = poly_factor_map.begin();
     while(payloadIter != poly_factor_map.end())
     {
-        QList<node_Data> up_list = node_param.getUpdata().value(payloadIter.key());
-        QList<node_Data> down_list = node_param.getDowndata().value(payloadIter.key());
+        QList<node_Data> up_list = node_param->getUpdata().value(payloadIter.key());
+        QList<node_Data> down_list = node_param->getDowndata().value(payloadIter.key());
         QVector<double> origin_temp,origin_div_pressure;
         QVector<double> poly_temp,poly_div_pressure;
 
@@ -210,7 +210,7 @@ void CalibrationDisplay::on_pbt_querycalibration_clicked()
         poly_temp = _divideTemp(start_temp,end_temp);
         for(int i = 0; i < poly_temp.count();++i)
         {
-            poly_div_pressure.append(node_param.getFactorComputeY(payloadIter.key(),poly_temp.at(i))-up_list.first().ref_pressure*1000);
+            poly_div_pressure.append(node_param->getFactorComputeY(payloadIter.key(),poly_temp.at(i)));
         }
 
         int origin_index = payloadIter.key();
